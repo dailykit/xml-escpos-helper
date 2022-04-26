@@ -1,13 +1,20 @@
-import { Command } from "./command";
-import { MutableBuffer } from "mutable-buffer";
-import Image from "./image";
+import { Command } from './command';
+import { MutableBuffer } from 'mutable-buffer';
+import Image from './image';
+import iconv from 'iconv-lite';
+import reshaper from 'arabic-persian-reshaper';
+import { Util } from './util';
 export class BufferBuilder {
   private buffer: MutableBuffer;
 
-  constructor(private defaultSettings: boolean = true) {
+  constructor(private defaultSettings: boolean = true, private options: any) {
     this.buffer = new MutableBuffer();
-
     if (this.defaultSettings) {
+      // this.buffer.write(Command.ESC_init);
+      // this.startAlign(ALIGNMENT.RIGHT);
+      // this.setPageMode();
+      // this.setPrintMode();
+      // this.setPrintDirection(ALIGNMENT.RIGHT);
       this.resetCharacterSize();
       this.resetCharacterCodeTable();
     }
@@ -18,13 +25,20 @@ export class BufferBuilder {
   }
 
   public resetCharacterCodeTable(): BufferBuilder {
+    // code page set, set page mode, set print direction in page mode
     this.buffer.write(Command.ESC_t(0));
+    return this;
+  }
+
+  public setCharacterCodeTable(codepage: number = 0): BufferBuilder {
+    // code page set, set page mode, set print direction in page mode
+    this.buffer.write([0x1b, 0x74, codepage]);
     return this;
   }
 
   public setCharacterSize(
     width: number = 0,
-    height: number = 0
+    height: number = 0,
   ): BufferBuilder {
     let size = (width << 4) + height;
     this.buffer.write(Command.GS_exclamation(size));
@@ -33,6 +47,14 @@ export class BufferBuilder {
 
   public resetCharacterSize(): BufferBuilder {
     this.buffer.write(Command.GS_exclamation(0));
+    return this;
+  }
+  public setPageMode(): BufferBuilder {
+    this.buffer.write(Command.ESC_l());
+    return this;
+  }
+  public setPrintMode(): BufferBuilder {
+    this.buffer.write(Command.ESC_exclamation(0));
     return this;
   }
 
@@ -57,7 +79,7 @@ export class BufferBuilder {
   }
 
   public startUnderline(
-    underlineMode: UNDERLINE_MODE = UNDERLINE_MODE.TWO_POINTS_OF_COARSE
+    underlineMode: UNDERLINE_MODE = UNDERLINE_MODE.TWO_POINTS_OF_COARSE,
   ): BufferBuilder {
     this.buffer.write(Command.ESC_minus(underlineMode));
     return this;
@@ -91,6 +113,10 @@ export class BufferBuilder {
     this.buffer.write(Command.ESC_rev(1));
     return this;
   }
+  public setPrintDirection(alignment: ALIGNMENT): BufferBuilder {
+    this.buffer.write(Command.ESC_T(alignment));
+    return this;
+  }
 
   public endReverseMode(): BufferBuilder {
     this.buffer.write(Command.ESC_rev(0));
@@ -104,7 +130,7 @@ export class BufferBuilder {
     height: number = 162,
     labelFont: BARCODE_LABEL_FONT = BARCODE_LABEL_FONT.FONT_A,
     labelPosition: BARCODE_LABEL_POSITION = BARCODE_LABEL_POSITION.BOTTOM,
-    leftSpacing: number = 0
+    leftSpacing: number = 0,
   ): BufferBuilder {
     this.buffer.write(Command.GS_w(width)); // width
     this.buffer.write(Command.GS_h(height)); // height
@@ -112,7 +138,7 @@ export class BufferBuilder {
     this.buffer.write(Command.GS_f(labelFont)); // HRI font
     this.buffer.write(Command.GS_H(labelPosition)); // HRI font
     this.buffer.write(Command.GS_K(barcodeSystem, data.length)); // data is a string in UTF-8
-    this.buffer.write(data, "ascii");
+    this.buffer.write(data, 'utf8');
     return this;
   }
 
@@ -120,13 +146,13 @@ export class BufferBuilder {
     data: string,
     version: number = 1,
     errorCorrectionLevel: QR_EC_LEVEL = QR_EC_LEVEL.H,
-    componentTypes: number = 8
+    componentTypes: number = 8,
   ): BufferBuilder {
     this.buffer.write(
-      Command.ESC_Z(version, errorCorrectionLevel, componentTypes)
+      Command.ESC_Z(version, errorCorrectionLevel, componentTypes),
     );
     this.buffer.writeUInt16LE(data.length); // data is a string in UTF-8
-    this.buffer.write(data, "ascii");
+    this.buffer.write(data, 'utf8');
     return this;
   }
 
@@ -134,14 +160,33 @@ export class BufferBuilder {
     image: number[],
     width: number,
     height: number,
-    scale: BITMAP_SCALE = BITMAP_SCALE.NORMAL
+    scale: BITMAP_SCALE = BITMAP_SCALE.NORMAL,
   ): BufferBuilder {
     //TODO
     return this;
   }
 
-  public printText(text: string): BufferBuilder {
-    this.buffer.write(text, "ascii");
+  public printText(
+    text: string,
+    encoding: string = 'utf8',
+    processText: string = 'true',
+  ): BufferBuilder {
+    let encodedText;
+    if (['cp864', 'win1256'].includes(encoding) && processText === 'true') {
+      // if the encoding is cp864 or win1256, we need to reverse the buffer
+      // to get the correct arabic
+      console.log('processText', processText);
+      const reshapedText = reshaper.ArabicShaper.convertArabic(text)
+        .replace('\u200b', '')
+        .replace('\u064B', '');
+      const updatedText = Util.convertArabicForm(reshapedText);
+      encodedText = iconv.encode(updatedText, encoding);
+      encodedText = Buffer.from(encodedText.buffer).reverse();
+    } else {
+      encodedText = iconv.encode(text, encoding);
+    }
+    this.setCharacterCodeTable(CODE_PAGE[encoding]);
+    this.buffer.write(encodedText);
     return this;
   }
 
@@ -178,7 +223,7 @@ export class BufferBuilder {
    * @return BufferBuilder
    */
   public paperCut(): BufferBuilder {
-    this.buffer.write(Command.GS_v(66,50));
+    this.buffer.write(Command.GS_v(66, 50));
     return this;
   }
 
@@ -196,7 +241,7 @@ export class BufferBuilder {
 
   public printImage(image: Image, mode: RASTER_MODE): BufferBuilder {
     if (!(image instanceof Image)) {
-      throw new TypeError("not supported");
+      throw new TypeError('not supported');
     }
     const raster = image.toRaster();
     this.buffer.write(Command.GS_v0(mode));
@@ -276,4 +321,39 @@ export enum RASTER_MODE {
   DOUBLE_WIDTH = 1,
   DOUBLE_HEIGHT = 2,
   DOUBLE_WIDTH_HEIGHT = 3,
+}
+export enum CODE_PAGE {
+  utf8 = 0,
+  cp437 = 0,
+  katakana = 1,
+  cp850 = 2,
+  cp852 = 18,
+  cp858 = 19,
+  cp860 = 3,
+  cp862 = 21,
+  cp863 = 4,
+  cp864 = 63,
+  cp865 = 5,
+  cp866 = 17,
+  thai42 = 23,
+  win1253 = 24,
+  win1254 = 25,
+  win1257 = 26,
+  farsi = 27,
+  win1251 = 28,
+  cp737 = 29,
+  cp775 = 30,
+  thai14 = 31,
+  cp1255 = 33,
+  thai11 = 34,
+  thai18 = 35,
+  cp855 = 36,
+  cp857 = 37,
+  cp928 = 38,
+  thai16 = 39,
+  win1256 = 40,
+  win1258 = 41,
+  khmer = 42,
+  win1250 = 47,
+  usrCodePage = 255,
 }
