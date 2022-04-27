@@ -64,4 +64,4 @@ export const TEMPLATES = {
     <text-line>{{tableData}}</text-line>
     <paper-cut/>
   </document>`,
-}
+};
