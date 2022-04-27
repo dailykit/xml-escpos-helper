@@ -7,14 +7,9 @@ import { Util } from './util';
 export class BufferBuilder {
   private buffer: MutableBuffer;
 
-  constructor(private defaultSettings: boolean = true, private options: any) {
+  constructor(private defaultSettings: boolean = true) {
     this.buffer = new MutableBuffer();
     if (this.defaultSettings) {
-      // this.buffer.write(Command.ESC_init);
-      // this.startAlign(ALIGNMENT.RIGHT);
-      // this.setPageMode();
-      // this.setPrintMode();
-      // this.setPrintDirection(ALIGNMENT.RIGHT);
       this.resetCharacterSize();
       this.resetCharacterCodeTable();
     }
@@ -175,13 +170,11 @@ export class BufferBuilder {
     if (['cp864', 'win1256'].includes(encoding) && processText === 'true') {
       // if the encoding is cp864 or win1256, we need to reverse the buffer
       // to get the correct arabic
-      console.log('processText', processText);
       const reshapedText = reshaper.ArabicShaper.convertArabic(text)
         .replace('\u200b', '')
         .replace('\u064B', '');
       const updatedText = Util.convertArabicForm(reshapedText);
       encodedText = iconv.encode(updatedText, encoding);
-      encodedText = Buffer.from(encodedText.buffer).reverse();
     } else {
       encodedText = iconv.encode(text, encoding);
     }
