@@ -1,5 +1,5 @@
 {
-  "name": "@tillpos/xml-escpos-helper",
+  "name": "@dailykit/xml-escpos-helper",
   "description": "ESC/POS with XML interface",
   "keywords": [
     "escpos",
@@ -8,7 +8,7 @@
     "xml",
     "printer"
   ],
-  "version": "0.2.2",
+  "version": "1.0.0",
   "files": [
     "lib",
     "LICENSE",
@@ -28,13 +28,13 @@
   },
   "repository": {
     "type": "git",
-    "url": "http://github.com/hitz-group/xml-escpos-helper.git"
+    "url": "https://github.com/dailykit/xml-escpos-helper.git"
   },
   "contributors": [
     "Snehit Velma <snehithvelma@gmail.com>"
   ],
   "bugs": {
-    "url": "https://github.com/hitz-group/xml-escpos-helper/issues"
+    "url": "https://github.com/dailykit/xml-escpos-helper/issues"
   },
   "dependencies": {
     "arabic-persian-reshaper": "^1.0.1",
