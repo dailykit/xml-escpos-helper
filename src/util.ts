@@ -1,5 +1,12 @@
+import reshaper from 'arabic-persian-reshaper';
+import iconv from 'iconv-lite';
+import { MutableBuffer } from 'mutable-buffer';
 export class Util {
-  public static convertArabicForm(text: string): string {
+  public static convertArabicForm(text: string): MutableBuffer {
+    const buffer = new MutableBuffer();
+    text = reshaper.ArabicShaper.convertArabic(text)
+      .replace('\u200b', '')
+      .replace('\u064B', '');
     const form = {
       ا: {
         isAvailable: false,
@@ -223,21 +230,63 @@ export class Util {
     let arabicForm = {
       end: {},
       middle: {},
+      beginning: {},
+      isolated: {},
     };
     Object.entries(form).forEach(([key, value]) => {
       if (!value.hasOwnProperty('isAvailable') || !value.isAvailable) {
         arabicForm['end'][value.end] = value;
         arabicForm['middle'][value.middle] = value;
+        arabicForm['beginning'][value.beginning] = value;
+        arabicForm['isolated'][value.isolated] = value;
       }
     });
 
     for (let i = 0; i < text.length; i++) {
+      if (text[i] === '?') {
+        buffer.write(iconv.encode(text[i], 'cp864'));
+        break;
+      }
       if (arabicForm.end[text[i]]) {
-        text = text.replace(text[i], arabicForm.end[text[i]].isolated);
+        // text = text.replace(text[i], arabicForm.end[text[i]].isolated);
+        const encodedChar = iconv.encode(
+          arabicForm.end[text[i]].isolated,
+          'cp864',
+        );
+        buffer.write(encodedChar);
       } else if (arabicForm.middle[text[i]]) {
-        text = text.replace(text[i], arabicForm.middle[text[i]].beginning);
+        // text = text.replace(text[i], arabicForm.middle[text[i]].beginning);
+        // let encodedChar;
+        let encodedChar = iconv.encode(
+          arabicForm.middle[text[i]].beginning,
+          'cp864',
+        );
+        if (encodedChar.toString('hex') === '3f') {
+          encodedChar = iconv.encode(
+            arabicForm.middle[text[i]].isolated,
+            'cp864',
+          );
+        }
+        buffer.write(encodedChar);
+      } else if (arabicForm.beginning[text[i]]) {
+        // text = text.replace(text[i], arabicForm.beginning[text[i]].isolated);
+        let encodedChar = iconv.encode(
+          arabicForm.beginning[text[i]].beginning,
+          'cp864',
+        );
+
+        if (encodedChar.toString('hex') === '3f') {
+          encodedChar = iconv.encode(
+            arabicForm.beginning[text[i]].isolated,
+            'cp864',
+          );
+        }
+        buffer.write(encodedChar);
+      } else {
+        const encodedChar = iconv.encode(text[i], 'cp864');
+        buffer.write(encodedChar);
       }
     }
-    return text.split('').reverse().join('');
+    return Buffer.from(buffer.buffer).reverse();
   }
 }
