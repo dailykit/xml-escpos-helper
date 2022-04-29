@@ -9,8 +9,6 @@ export default class TextNode extends XMLNode {
   public open(bufferBuilder: BufferBuilder): BufferBuilder {
     let encoding: string = this.attributes.encoding || 'utf-8';
     let processText: string = this.attributes.processText || 'true';
-    console.log('text-node1 processText', processText);
-    console.log('text-node1 encoding', encoding);
     if (/\d+:\d+/.test(this.attributes.size)) {
       let size: number[] = new String(this.attributes.size)
         .split(':')

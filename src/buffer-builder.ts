@@ -3,6 +3,7 @@ import { MutableBuffer } from 'mutable-buffer';
 import Image from './image';
 import iconv from 'iconv-lite';
 import { Util } from './util';
+import { wrapWord } from './wrapWord';
 export class BufferBuilder {
   private buffer: MutableBuffer;
 
@@ -169,11 +170,11 @@ export class BufferBuilder {
     if (['cp864', 'win1256'].includes(encoding) && processText === 'true') {
       // if the encoding is cp864 or win1256, we need to reverse the buffer
       // to get the correct arabic
-      const arBuffer = Util.convertArabicForm(text);
-      // encodedText = iconv.encode(updatedText, encoding);
-      encodedText = arBuffer;
+      const updatedText = Util.convertArabicForm(text);
+      encodedText = iconv.encode(updatedText, encoding);
     } else {
-      encodedText = iconv.encode(text, encoding);
+      const updatedText = wrapWord(text, 32).join(`\x0a`);
+      encodedText = iconv.encode(updatedText, encoding);
     }
     this.setCharacterCodeTable(CODE_PAGE[encoding]);
     this.buffer.write(encodedText);

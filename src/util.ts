@@ -1,12 +1,8 @@
 import reshaper from 'arabic-persian-reshaper';
 import iconv from 'iconv-lite';
-import { MutableBuffer } from 'mutable-buffer';
+import { wrapWord } from './wrapWord';
 export class Util {
-  public static convertArabicForm(text: string): MutableBuffer {
-    const buffer = new MutableBuffer();
-    text = reshaper.ArabicShaper.convertArabic(text)
-      .replace('\u200b', '')
-      .replace('\u064B', '');
+  public static convertArabicForm(text: string): string {
     const form = {
       ا: {
         isAvailable: false,
@@ -242,51 +238,41 @@ export class Util {
       }
     });
 
+    text = reshaper.ArabicShaper.convertArabic(text)
+      .replace('\u200b', '')
+      .replace('\u064B', '');
+
     for (let i = 0; i < text.length; i++) {
       if (text[i] === '?') {
-        buffer.write(iconv.encode(text[i], 'cp864'));
         break;
       }
       if (arabicForm.end[text[i]]) {
-        // text = text.replace(text[i], arabicForm.end[text[i]].isolated);
-        const encodedChar = iconv.encode(
-          arabicForm.end[text[i]].isolated,
-          'cp864',
-        );
-        buffer.write(encodedChar);
+        text = text.replace(text[i], arabicForm.end[text[i]].isolated);
       } else if (arabicForm.middle[text[i]]) {
-        // text = text.replace(text[i], arabicForm.middle[text[i]].beginning);
-        // let encodedChar;
         let encodedChar = iconv.encode(
           arabicForm.middle[text[i]].beginning,
           'cp864',
         );
         if (encodedChar.toString('hex') === '3f') {
-          encodedChar = iconv.encode(
-            arabicForm.middle[text[i]].isolated,
-            'cp864',
-          );
+          text = text.replace(text[i], arabicForm.middle[text[i]].isolated);
+        } else {
+          text = text.replace(text[i], arabicForm.middle[text[i]].beginning);
         }
-        buffer.write(encodedChar);
       } else if (arabicForm.beginning[text[i]]) {
-        // text = text.replace(text[i], arabicForm.beginning[text[i]].isolated);
         let encodedChar = iconv.encode(
           arabicForm.beginning[text[i]].beginning,
           'cp864',
         );
-
         if (encodedChar.toString('hex') === '3f') {
-          encodedChar = iconv.encode(
-            arabicForm.beginning[text[i]].isolated,
-            'cp864',
-          );
+          text = text.replace(text[i], arabicForm.beginning[text[i]].isolated);
+        } else {
+          text = text.replace(text[i], arabicForm.beginning[text[i]].beginning);
         }
-        buffer.write(encodedChar);
-      } else {
-        const encodedChar = iconv.encode(text[i], 'cp864');
-        buffer.write(encodedChar);
       }
     }
-    return Buffer.from(buffer.buffer).reverse();
+
+    const wrapedText = wrapWord(text, 32).join(`\x0a`);
+
+    return wrapedText.split('').reverse().join('');
   }
 }
