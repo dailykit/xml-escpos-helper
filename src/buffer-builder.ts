@@ -331,7 +331,7 @@ export enum CODE_PAGE {
   cp860 = 3,
   cp862 = 21,
   cp863 = 4,
-  cp864 = 63,
+  cp864 = 22,
   cp865 = 5,
   cp866 = 17,
   thai42 = 23,
