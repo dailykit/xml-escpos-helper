@@ -11,6 +11,7 @@ export class BufferBuilder {
     private defaultSettings: boolean = true,
     private options: any = {
       wrapWord: true,
+      wrapWordMaxLength: 32,
     },
   ) {
     this.buffer = new MutableBuffer();
@@ -179,7 +180,7 @@ export class BufferBuilder {
       encodedText = iconv.encode(updatedText, encoding);
     } else {
       const updatedText = this.options.wrapWord
-        ? wrapWord(text, 32).join(`\x0a`)
+        ? wrapWord(text, this.options.wrapWordMaxLength).join(`\x0a`)
         : text;
       encodedText = iconv.encode(updatedText, encoding);
     }

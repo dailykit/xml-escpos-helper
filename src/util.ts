@@ -272,7 +272,7 @@ export class Util {
     }
 
     const wrapedText = options.wrapWord
-      ? wrapWord(text, 32).join(`\x0a`)
+      ? wrapWord(text, options.wrapWordMaxLength).join(`\x0a`)
       : text;
 
     return wrapedText.split('').reverse().join('');
