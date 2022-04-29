@@ -71,7 +71,12 @@ const input = {
   thankyouNote: 'أهلا بك',
 };
 
-const buffer = EscPos.getBufferFromTemplate(template, input);
+const options = {
+  wrapWord: false, //true by default
+  wrapWordMaxLength: 48, // 32 by default
+};
+
+const buffer = EscPos.getBufferFromTemplate(template, input, options);
 // send this buffer to a stream (eg.: bluetooth or wifi)
 ```
 
