@@ -9,8 +9,8 @@ export class TemplateParser {
     this.mustache = Mustache;
   }
 
-  public parser(template, scope): BufferBuilder {
+  public parser(template, scope, options): BufferBuilder {
     const xml = this.mustache.render(template, scope);
-    return new XMLParser().parser(xml);
+    return new XMLParser().parser(xml, options);
   }
 }

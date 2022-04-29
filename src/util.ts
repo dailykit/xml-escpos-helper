@@ -1,5 +1,8 @@
+import reshaper from 'arabic-persian-reshaper';
+import iconv from 'iconv-lite';
+import { wrapWord } from './wrapWord';
 export class Util {
-  public static convertArabicForm(text: string): string {
+  public static convertArabicForm(text: string, options: any): string {
     const form = {
       ا: {
         isAvailable: false,
@@ -223,21 +226,55 @@ export class Util {
     let arabicForm = {
       end: {},
       middle: {},
+      beginning: {},
+      isolated: {},
     };
     Object.entries(form).forEach(([key, value]) => {
       if (!value.hasOwnProperty('isAvailable') || !value.isAvailable) {
         arabicForm['end'][value.end] = value;
         arabicForm['middle'][value.middle] = value;
+        arabicForm['beginning'][value.beginning] = value;
+        arabicForm['isolated'][value.isolated] = value;
       }
     });
 
+    text = reshaper.ArabicShaper.convertArabic(text)
+      .replace('\u200b', '')
+      .replace('\u064B', '');
+
     for (let i = 0; i < text.length; i++) {
+      if (text[i] === '?') {
+        break;
+      }
       if (arabicForm.end[text[i]]) {
         text = text.replace(text[i], arabicForm.end[text[i]].isolated);
       } else if (arabicForm.middle[text[i]]) {
-        text = text.replace(text[i], arabicForm.middle[text[i]].beginning);
+        let encodedChar = iconv.encode(
+          arabicForm.middle[text[i]].beginning,
+          'cp864',
+        );
+        if (encodedChar.toString('hex') === '3f') {
+          text = text.replace(text[i], arabicForm.middle[text[i]].isolated);
+        } else {
+          text = text.replace(text[i], arabicForm.middle[text[i]].beginning);
+        }
+      } else if (arabicForm.beginning[text[i]]) {
+        let encodedChar = iconv.encode(
+          arabicForm.beginning[text[i]].beginning,
+          'cp864',
+        );
+        if (encodedChar.toString('hex') === '3f') {
+          text = text.replace(text[i], arabicForm.beginning[text[i]].isolated);
+        } else {
+          text = text.replace(text[i], arabicForm.beginning[text[i]].beginning);
+        }
       }
     }
-    return text.split('').reverse().join('');
+
+    const wrapedText = options.wrapWord
+      ? wrapWord(text, options.wrapWordMaxLength).join(`\x0a`)
+      : text;
+
+    return wrapedText.split('').reverse().join('');
   }
 }

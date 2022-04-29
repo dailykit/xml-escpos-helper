@@ -4,14 +4,13 @@ import { XMLNode } from './xml-node';
 import { NodeFactory } from './node-factory';
 
 export class XMLParser {
-
-  public parser(xml: string): BufferBuilder {
+  public parser(xml: string, options): BufferBuilder {
     let parsedXML = parser(xml);
-    return this.compile(parsedXML);
+    return this.compile(parsedXML, options);
   }
 
-  private compile(parsedXML: any): BufferBuilder {
-    let bufferBuilder = new BufferBuilder();
+  private compile(parsedXML: any, options: any): BufferBuilder {
+    let bufferBuilder = new BufferBuilder(true, options);
     let rootNode = this.adapter(parsedXML.root, null);
     return rootNode.draw(bufferBuilder);
   }
@@ -26,5 +25,4 @@ export class XMLParser {
     }
     return xmlNode;
   }
-
 }

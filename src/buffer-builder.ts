@@ -2,12 +2,18 @@ import { Command } from './command';
 import { MutableBuffer } from 'mutable-buffer';
 import Image from './image';
 import iconv from 'iconv-lite';
-import reshaper from 'arabic-persian-reshaper';
 import { Util } from './util';
+import { wrapWord } from './wrapWord';
 export class BufferBuilder {
   private buffer: MutableBuffer;
 
-  constructor(private defaultSettings: boolean = true) {
+  constructor(
+    private defaultSettings: boolean = true,
+    private options: any = {
+      wrapWord: true,
+      wrapWordMaxLength: 32,
+    },
+  ) {
     this.buffer = new MutableBuffer();
     if (this.defaultSettings) {
       this.resetCharacterSize();
@@ -170,13 +176,13 @@ export class BufferBuilder {
     if (['cp864', 'win1256'].includes(encoding) && processText === 'true') {
       // if the encoding is cp864 or win1256, we need to reverse the buffer
       // to get the correct arabic
-      const reshapedText = reshaper.ArabicShaper.convertArabic(text)
-        .replace('\u200b', '')
-        .replace('\u064B', '');
-      const updatedText = Util.convertArabicForm(reshapedText);
+      const updatedText = Util.convertArabicForm(text, this.options);
       encodedText = iconv.encode(updatedText, encoding);
     } else {
-      encodedText = iconv.encode(text, encoding);
+      const updatedText = this.options.wrapWord
+        ? wrapWord(text, this.options.wrapWordMaxLength).join(`\x0a`)
+        : text;
+      encodedText = iconv.encode(updatedText, encoding);
     }
     this.setCharacterCodeTable(CODE_PAGE[encoding]);
     this.buffer.write(encodedText);
@@ -325,7 +331,7 @@ export enum CODE_PAGE {
   cp860 = 3,
   cp862 = 21,
   cp863 = 4,
-  cp864 = 63,
+  cp864 = 22,
   cp865 = 5,
   cp866 = 17,
   thai42 = 23,

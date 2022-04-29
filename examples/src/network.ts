@@ -1,5 +1,5 @@
 import net from 'net';
-import { EscPos } from '@tillpos/xml-escpos-helper';
+import { EscPos } from '@dailykit/xml-escpos-helper';
 const PRINTERS = [{ device_name: 'Epson', host: '192.168.0.8', port: 9100 }];
 
 const connectToPrinter = (
@@ -32,7 +32,7 @@ export const sendDataToPrinter = async (input: any, template: string) => {
   const { host, port } = PRINTERS[0];
   const buffer = EscPos.getBufferFromTemplate(template, input);
   try {
-    await connectToPrinter(host, port, (buffer as unknown) as Buffer);
+    await connectToPrinter(host, port, buffer as unknown as Buffer);
   } catch (err) {
     console.log('some error', err);
   }
