@@ -2,7 +2,7 @@ import reshaper from 'arabic-persian-reshaper';
 import iconv from 'iconv-lite';
 import { wrapWord } from './wrapWord';
 export class Util {
-  public static convertArabicForm(text: string): string {
+  public static convertArabicForm(text: string, options: any): string {
     const form = {
       ا: {
         isAvailable: false,
@@ -271,7 +271,9 @@ export class Util {
       }
     }
 
-    const wrapedText = wrapWord(text, 32).join(`\x0a`);
+    const wrapedText = options.wrapWord
+      ? wrapWord(text, 32).join(`\x0a`)
+      : text;
 
     return wrapedText.split('').reverse().join('');
   }

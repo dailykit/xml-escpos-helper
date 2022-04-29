@@ -7,7 +7,12 @@ import { wrapWord } from './wrapWord';
 export class BufferBuilder {
   private buffer: MutableBuffer;
 
-  constructor(private defaultSettings: boolean = true) {
+  constructor(
+    private defaultSettings: boolean = true,
+    private options: any = {
+      wrapWord: true,
+    },
+  ) {
     this.buffer = new MutableBuffer();
     if (this.defaultSettings) {
       this.resetCharacterSize();
@@ -170,10 +175,12 @@ export class BufferBuilder {
     if (['cp864', 'win1256'].includes(encoding) && processText === 'true') {
       // if the encoding is cp864 or win1256, we need to reverse the buffer
       // to get the correct arabic
-      const updatedText = Util.convertArabicForm(text);
+      const updatedText = Util.convertArabicForm(text, this.options);
       encodedText = iconv.encode(updatedText, encoding);
     } else {
-      const updatedText = wrapWord(text, 32).join(`\x0a`);
+      const updatedText = this.options.wrapWord
+        ? wrapWord(text, 32).join(`\x0a`)
+        : text;
       encodedText = iconv.encode(updatedText, encoding);
     }
     this.setCharacterCodeTable(CODE_PAGE[encoding]);
