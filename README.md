@@ -55,7 +55,7 @@ const template = `
 
     {{#thankyouNote}}
     <align mode="center">
-      <text-line encoding="cp864" size="0:0">  {{{thankyouNote}}}</text-line>
+      <text-line encoding="cp864" codepage="22" size="0:0">  {{{thankyouNote}}}</text-line>
     </align>
 
     <line-feed />
@@ -64,7 +64,7 @@ const template = `
   </document>
 `;
 
-// if encoding in text-line is not mentioned (by default it is set to utf8)
+// if encoding & codepage in text-line is not mentioned (by default it is set to utf8 & 0 respectively)
 
 const input = {
   title: 'Sample',

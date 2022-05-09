@@ -170,6 +170,7 @@ export class BufferBuilder {
   public printText(
     text: string,
     encoding: string = 'utf8',
+    codepage: number = 0,
     processText: string = 'true',
   ): BufferBuilder {
     let encodedText;
@@ -184,7 +185,7 @@ export class BufferBuilder {
         : text;
       encodedText = iconv.encode(updatedText, encoding);
     }
-    this.setCharacterCodeTable(CODE_PAGE[encoding]);
+    this.setCharacterCodeTable(codepage);
     this.buffer.write(encodedText);
     return this;
   }
@@ -320,39 +321,4 @@ export enum RASTER_MODE {
   DOUBLE_WIDTH = 1,
   DOUBLE_HEIGHT = 2,
   DOUBLE_WIDTH_HEIGHT = 3,
-}
-export enum CODE_PAGE {
-  utf8 = 0,
-  cp437 = 0,
-  katakana = 1,
-  cp850 = 2,
-  cp852 = 18,
-  cp858 = 19,
-  cp860 = 3,
-  cp862 = 21,
-  cp863 = 4,
-  cp864 = 22,
-  cp865 = 5,
-  cp866 = 17,
-  thai42 = 23,
-  win1253 = 24,
-  win1254 = 25,
-  win1257 = 26,
-  farsi = 27,
-  win1251 = 28,
-  cp737 = 29,
-  cp775 = 30,
-  thai14 = 31,
-  cp1255 = 33,
-  thai11 = 34,
-  thai18 = 35,
-  cp855 = 36,
-  cp857 = 37,
-  cp928 = 38,
-  thai16 = 39,
-  win1256 = 40,
-  win1258 = 41,
-  khmer = 42,
-  win1250 = 47,
-  usrCodePage = 255,
 }
